@@ -1,119 +1,171 @@
 ---
-title: "Wavelet — Real-time computed results for app developers"
+title: "Wavelet — The reactive backend for apps and agents"
 sidebarTitle: Overview
-description: "Subscribe to computed SQL results over WebSocket. Wavelet turns RisingWave materialized views into live APIs with typed SDKs, JWT multi-tenant filtering, and AI agent tooling."
+description: "Build apps and AI agents with live, queryable data. Write data in, subscribe to results — Wavelet keeps everything in sync automatically."
 ---
 
-Wavelet is a real-time backend that sits on top of [RisingWave](https://docs.risingwave.com/get-started/intro). You define SQL views in a config file, and Wavelet turns them into live APIs that push diffs to your frontend over WebSocket.
+Wavelet is a reactive backend. You write data in, define queries, and every subscriber — whether it's a React component or an AI agent — gets live results that update automatically.
 
-```
-App events ──▶ Wavelet HTTP API ──▶ RisingWave (stream processing)
-                                          │
-                                    Materialized Views
-                                          │
-                                   Wavelet Server ──▶ WebSocket diffs ──▶ React / any client
-```
+No polling. No manual cache invalidation. No WebSocket plumbing.
 
-## What Wavelet does
-
-| Layer | What you get |
-|-------|-------------|
-| **Config** | Define streams (input tables) and views (SQL queries) in `wavelet.config.ts` |
-| **CLI** | `wavelet dev` starts RisingWave + syncs DDL + launches server. `wavelet push` deploys to production. |
-| **Server** | HTTP API for writes and reads. WebSocket fanout for real-time diffs. |
-| **SDK** | TypeScript client with `view.get()`, `view.subscribe()`, `stream.emit()`. React hook `useWavelet()`. |
-| **Codegen** | `wavelet generate` produces a fully typed client from your config. |
-| **MCP** | AI agents can query views and emit events via Model Context Protocol. |
-
-## Key concepts
-
-### Streams
-
-Streams are input tables. You write events to them via HTTP POST. Each stream has typed columns.
-
-```typescript
-streams: {
-  game_events: {
-    columns: {
-      player_id: 'string',
-      action: 'string',
-      score: 'int',
-    }
-  }
-}
+<CodeGroup>
+```typescript Write data
+await client.stream('purchases').emit({
+  user_id: 'alice',
+  item: 'Pro Plan',
+  amount: 29.99,
+})
 ```
 
-### Views
+```typescript Subscribe to results
+// React — one hook, always up to date
+const { data } = useWavelet('revenue_by_user', {
+  keyBy: 'user_id',
+})
+```
 
-Views are materialized SQL queries over your streams (or CDC sources). Wavelet keeps them up to date in RisingWave and pushes diffs to subscribers.
-
-```typescript
+```typescript Define queries
 views: {
-  leaderboard: {
+  revenue_by_user: {
     query: sql`
-      SELECT player_id, SUM(score) AS total_score
-      FROM game_events
-      GROUP BY player_id
+      SELECT user_id, SUM(amount) AS total
+      FROM purchases
+      GROUP BY user_id
     `,
   }
 }
 ```
+</CodeGroup>
 
-### Diffs
+## What you can build
 
-Instead of sending the full result set on every change, Wavelet sends diffs — which rows were inserted, updated, or deleted. Your client merges them into local state.
+<CardGroup cols={2}>
+  <Card title="Real-time dashboards" icon="chart-line">
+    Leaderboards, analytics, monitoring panels that update the instant data changes. No refresh button.
+  </Card>
+  <Card title="AI agent backends" icon="robot">
+    Agents query live data and write events via MCP. Build agents that observe, react, and act on your data.
+  </Card>
+  <Card title="Multi-tenant SaaS" icon="users">
+    JWT-based filtering built in. Each user sees only their data — enforced server-side, zero extra code.
+  </Card>
+  <Card title="Live collaboration" icon="arrows-rotate">
+    Activity feeds, notifications, shared state. Every connected client stays in sync automatically.
+  </Card>
+</CardGroup>
 
-```json
-{
-  "type": "diff",
-  "view": "leaderboard",
-  "inserted": [{ "player_id": "alice", "total_score": 150 }],
-  "updated":  [{ "player_id": "bob", "total_score": 320 }],
-  "deleted":  []
-}
-```
+## How it works
 
-### Sources
+<Steps>
+  <Step title="Define your data and queries">
+    Write a `wavelet.config.ts` that declares your input streams and the SQL queries you want to subscribe to.
 
-Beyond HTTP writes, Wavelet can ingest data from existing PostgreSQL databases via CDC (Change Data Capture). Changes in your Postgres tables automatically flow into RisingWave.
+    ```typescript wavelet.config.ts
+    import { defineConfig, sql } from '@risingwave/wavelet'
+
+    export default defineConfig({
+      database: 'postgresql://root@localhost:4566/dev',
+
+      streams: {
+        purchases: {
+          columns: { user_id: 'string', item: 'string', amount: 'float' },
+        },
+      },
+
+      views: {
+        revenue_by_user: {
+          query: sql`
+            SELECT user_id, SUM(amount) AS total, COUNT(*) AS orders
+            FROM purchases GROUP BY user_id
+          `,
+        },
+      },
+    })
+    ```
+  </Step>
+  <Step title="Start the server">
+    One command sets up everything — database tables, queries, and a live API server.
+
+    ```bash
+    npx wavelet dev
+    ```
+  </Step>
+  <Step title="Use it from your app or agent">
+    Write data in. Subscribe to results. Your UI updates automatically.
+
+    ```tsx
+    import { initWavelet, useWavelet } from '@risingwave/wavelet-sdk/react'
+
+    initWavelet({ url: 'http://localhost:8080' })
+
+    function RevenueTable() {
+      const { data, isLoading } = useWavelet('revenue_by_user', {
+        keyBy: 'user_id',
+      })
+
+      if (isLoading) return <p>Loading...</p>
+
+      return (
+        <ul>
+          {data.map((row) => (
+            <li key={row.user_id}>
+              {row.user_id}: ${row.total} ({row.orders} orders)
+            </li>
+          ))}
+        </ul>
+      )
+    }
+    ```
+
+    Or let an AI agent query and act on the same data:
+
+    ```
+    Agent: "Which users spent more than $100?"
+    → query_view({ view: "revenue_by_user", filter: {} })
+    → Finds 3 users, sends them a thank-you email
+    ```
+  </Step>
+</Steps>
+
+## Why Wavelet
+
+| Traditional approach | With Wavelet |
+|---------------------|-------------|
+| Poll your database every N seconds | Subscribers get pushed updates instantly |
+| Build a WebSocket server, manage connections, handle reconnection | Built in. One line: `useWavelet('my_view')` |
+| Write cache invalidation logic | No cache to invalidate — queries are always live |
+| Build separate APIs for your app and your agents | Same data, same queries — apps and agents use the same backend |
+| Write per-tenant data filtering logic | `filterBy: 'tenant_id'` + JWT. Done. |
+
+## Connect your existing database
+
+Already have a Postgres database? Wavelet can subscribe to changes from it via CDC — no need to migrate your data.
 
 ```typescript
 sources: {
-  main_db: {
+  my_db: {
     type: 'postgres',
-    connection: 'postgresql://user:pass@host:5432/mydb',
+    connection: 'postgresql://user:pass@your-db:5432/myapp',
     tables: ['users', 'orders'],
-  }
+  },
 }
 ```
 
-## How it works under the hood
+Your existing tables become available as live query sources. Combine them with Wavelet streams to build views that span both existing and new data.
 
-1. **DDL sync** — `DdlManager` reads your config, compares it against RisingWave's catalog, and applies minimal DDL changes (create/update/delete tables, materialized views, subscriptions).
+## Next steps
 
-2. **Subscription cursors** — For each materialized view, Wavelet creates a RisingWave subscription and opens a blocking cursor (`FETCH NEXT ... WITH (timeout = '5s')`). When rows change, RisingWave pushes them through the cursor.
-
-3. **WebSocket fanout** — The cursor manager dispatches diffs to `WebSocketFanout`, which broadcasts to all connected clients. If JWT auth is configured, diffs are filtered per-client based on token claims.
-
-4. **Stateless** — All persistent state lives in RisingWave. Wavelet server keeps only cursor names and WebSocket connections in memory. On restart, cursors recover from RisingWave's 24-hour retention window.
-
-## When to use Wavelet
-
-Wavelet is a good fit when you need:
-
-- **Real-time dashboards** — leaderboards, analytics, monitoring
-- **Live feeds** — activity streams, notifications, chat
-- **Multi-tenant SaaS** — per-user data views with JWT filtering
-- **AI agent backends** — let agents query and write data via MCP
-
-Wavelet is not a general-purpose database or a replacement for your existing backend. It is a real-time compute layer that subscribes to changes and pushes results.
-
-## Packages
-
-| npm package | Purpose |
-|-------------|---------|
-| `@risingwave/wavelet` | `defineConfig`, `sql` tag, shared types |
-| `@risingwave/wavelet-server` | WebSocket fanout, HTTP API, DDL manager, JWT auth |
-| `@risingwave/wavelet-sdk` | TypeScript client + React hooks |
-| `@risingwave/wavelet-cli` | CLI (`wavelet dev`, `wavelet push`, codegen) |
-| `@risingwave/wavelet-mcp` | MCP server for AI agent integration |
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/getting-started">
+    Build a real-time leaderboard in 5 minutes.
+  </Card>
+  <Card title="Configuration" icon="gear" href="/config">
+    All config options for streams, views, sources, and auth.
+  </Card>
+  <Card title="TypeScript SDK" icon="code" href="/sdk/client">
+    Client API for views, streams, and subscriptions.
+  </Card>
+  <Card title="MCP for AI agents" icon="robot" href="/mcp">
+    Let your agents query and write data.
+  </Card>
+</CardGroup>

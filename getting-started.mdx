@@ -1,35 +1,31 @@
 ---
-title: "Get started with Wavelet"
-sidebarTitle: Getting started
-description: "Go from zero to a real-time leaderboard in 5 minutes. Install Wavelet, define a stream and view, start the dev server, write events, and subscribe to live results."
+title: "Quickstart"
+sidebarTitle: Quickstart
+description: "Go from zero to a live, reactive leaderboard in 5 minutes."
 ---
 
-This guide walks you through building a real-time leaderboard. By the end, you will have a running Wavelet server that accepts game events over HTTP, computes a leaderboard in RisingWave, and pushes live updates over WebSocket.
+You'll build a real-time leaderboard: write game scores in, subscribe to ranked results that update instantly.
 
 ## Prerequisites
 
 - **Node.js** >= 20
-- **RisingWave** — Wavelet will start it automatically in dev mode if you have it [installed](https://docs.risingwave.com/deploy/risingwave-docker-compose), or you can use Docker
+- **Docker** (Wavelet starts a database automatically — Docker is the easiest way)
 
-## 1. Create a project
+## Create a project
 
 ```bash
 mkdir my-app && cd my-app
 npm init -y
-npm install @risingwave/wavelet @risingwave/wavelet-cli
+npm install @risingwave/wavelet @risingwave/wavelet-cli @risingwave/wavelet-sdk
 ```
-
-Generate a starter config:
 
 ```bash
 npx wavelet init
 ```
 
-This creates `wavelet.config.ts` in your project root.
+## Define your data
 
-## 2. Define your config
-
-Edit `wavelet.config.ts`:
+Edit `wavelet.config.ts` — this is where you declare what data goes in and what queries you want to subscribe to:
 
 ```typescript wavelet.config.ts
 import { defineConfig, sql } from '@risingwave/wavelet'
@@ -37,6 +33,7 @@ import { defineConfig, sql } from '@risingwave/wavelet'
 export default defineConfig({
   database: 'postgresql://root@localhost:4566/dev',
 
+  // What goes in: game scores
   streams: {
     game_events: {
       columns: {
@@ -47,6 +44,7 @@ export default defineConfig({
     },
   },
 
+  // What comes out: a live leaderboard
   views: {
     leaderboard: {
       query: sql`
@@ -62,98 +60,58 @@ export default defineConfig({
 })
 ```
 
-<Tip>
-`defineConfig` provides TypeScript autocompletion for your config. The `sql` tag marks SQL strings so Wavelet can track them.
-</Tip>
-
-## 3. Start the dev server
+## Start the server
 
 ```bash
 npx wavelet dev
 ```
 
-This will:
-1. Start RisingWave if it is not already running (native binary or Docker)
-2. Create the `game_events` table and `leaderboard` materialized view in RisingWave
-3. Start the Wavelet HTTP + WebSocket server on `http://localhost:8080`
+That's it. Wavelet starts the database, creates your tables and queries, and launches a server on `http://localhost:8080`.
 
-You should see output like:
-
-```
-✓ RisingWave is running
-+ stream  game_events
-+ view    leaderboard
-+ sub     wavelet_sub_leaderboard
-Wavelet server listening on http://localhost:8080
-```
-
-## 4. Write events
-
-Send game events via HTTP POST:
+## Write some data
 
 ```bash
-# Single event
 curl -X POST http://localhost:8080/v1/streams/game_events \
   -H "Content-Type: application/json" \
   -d '{"player_id": "alice", "action": "win", "score": 100}'
 
-# Batch of events
-curl -X POST http://localhost:8080/v1/streams/game_events/batch \
+curl -X POST http://localhost:8080/v1/streams/game_events \
   -H "Content-Type: application/json" \
-  -d '[
-    {"player_id": "bob", "action": "win", "score": 75},
-    {"player_id": "alice", "action": "win", "score": 50}
-  ]'
+  -d '{"player_id": "bob", "action": "win", "score": 75}'
 ```
 
-## 5. Read the leaderboard
-
-Query the current state via HTTP GET:
+## Read the results
 
 ```bash
 curl http://localhost:8080/v1/views/leaderboard
 ```
 
-Response:
-
 ```json
 {
   "rows": [
-    { "player_id": "alice", "total_score": 150, "games_played": 2 },
+    { "player_id": "alice", "total_score": 100, "games_played": 1 },
     { "player_id": "bob", "total_score": 75, "games_played": 1 }
   ]
 }
 ```
 
-You can also filter with query parameters:
+## Subscribe to live updates
 
-```bash
-curl "http://localhost:8080/v1/views/leaderboard?player_id=alice"
-```
-
-## 6. Subscribe to live updates
-
-Connect to the WebSocket endpoint to receive real-time diffs:
+This is where it gets interesting. Open a WebSocket connection and your client gets pushed updates every time the leaderboard changes:
 
 ```javascript
 const ws = new WebSocket('ws://localhost:8080/subscribe/leaderboard')
 
 ws.onmessage = (event) => {
   const msg = JSON.parse(event.data)
-
-  if (msg.type === 'connected') {
-    console.log('Subscribed to', msg.view)
-  }
-
   if (msg.type === 'diff') {
-    console.log('Inserted:', msg.inserted)
-    console.log('Updated:', msg.updated)
-    console.log('Deleted:', msg.deleted)
+    console.log('New scores:', msg.inserted)
+    console.log('Updated scores:', msg.updated)
   }
 }
 ```
 
-Now send another event in a separate terminal:
+Send another score in a separate terminal — watch it appear in your WebSocket client instantly:
 
 ```bash
 curl -X POST http://localhost:8080/v1/streams/game_events \
@@ -161,85 +119,27 @@ curl -X POST http://localhost:8080/v1/streams/game_events \
   -d '{"player_id": "alice", "action": "win", "score": 200}'
 ```
 
-Your WebSocket client will receive:
+## Use it in React
 
-```json
-{
-  "type": "diff",
-  "view": "leaderboard",
-  "cursor": "1711234567890",
-  "inserted": [],
-  "updated": [{ "player_id": "alice", "total_score": 350, "games_played": 3 }],
-  "deleted": []
-}
-```
-
-## 7. Use the TypeScript SDK
-
-Install the SDK:
-
-```bash
-npm install @risingwave/wavelet-sdk
-```
-
-Generate a typed client:
-
-```bash
-npx wavelet generate
-```
-
-This creates `.wavelet/client.ts` with typed interfaces for your views and streams.
-
-Use it in your app:
-
-```typescript
-import { WaveletClient } from '@risingwave/wavelet-sdk'
-
-const client = new WaveletClient({ url: 'http://localhost:8080' })
-
-// Read current leaderboard
-const rows = await client.view('leaderboard').get()
-
-// Subscribe to live updates
-const unsub = client.view('leaderboard').subscribe({
-  onData: (diff) => {
-    console.log('Changes:', diff.inserted, diff.updated, diff.deleted)
-  },
-})
-
-// Write an event
-await client.stream('game_events').emit({
-  player_id: 'charlie',
-  action: 'win',
-  score: 90,
-})
-```
-
-### React
-
-```bash
-npm install @risingwave/wavelet-sdk react
-```
+The SDK gives you a single hook that handles everything — initial fetch, WebSocket subscription, and state management:
 
 ```tsx
 import { initWavelet, useWavelet } from '@risingwave/wavelet-sdk/react'
 
-// Initialize once at app startup
 initWavelet({ url: 'http://localhost:8080' })
 
 function Leaderboard() {
-  const { data, isLoading, error } = useWavelet('leaderboard', {
+  const { data, isLoading } = useWavelet('leaderboard', {
     keyBy: 'player_id',
   })
 
-  if (isLoading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
+  if (isLoading) return <p>Loading...</p>
 
   return (
     <ul>
       {data.map((row) => (
         <li key={row.player_id}>
-          {row.player_id}: {row.total_score}
+          {row.player_id}: {row.total_score} pts ({row.games_played} games)
         </li>
       ))}
     </ul>
@@ -247,26 +147,41 @@ function Leaderboard() {
 }
 ```
 
-<Tip>
-The `keyBy` option tells `useWavelet` which column is the primary key. This enables efficient O(n) merging of diffs using a Map instead of JSON comparison.
-</Tip>
+Your component re-renders automatically when the leaderboard changes. No polling, no manual state updates.
 
-## 8. Deploy to production
+## Generate typed clients
 
-When you are ready to deploy, use `wavelet push` to sync your config against a production RisingWave instance:
+Want full type safety? One command generates typed interfaces from your config:
 
 ```bash
-npx wavelet push --config wavelet.config.ts
+npx wavelet generate
 ```
 
-This applies the same idempotent DDL sync that `wavelet dev` uses — it diffs your config against the database and only makes necessary changes.
+Now your views and streams are fully typed — autocomplete, compile-time checks, the works.
+
+## Deploy
+
+When you're ready for production, `wavelet push` syncs your config to any database:
+
+```bash
+npx wavelet push
+```
+
+It only applies what changed. Safe to run multiple times.
 
 ## Next steps
 
-- [Configuration reference](/config) — all config options
-- [CLI reference](/cli) — all commands and flags
-- [TypeScript SDK](/sdk/client) — client API details
-- [React hooks](/sdk/react) — `useWavelet` in depth
-- [JWT multi-tenant filtering](/server/jwt-auth) — per-user data isolation
-- [Postgres CDC sources](/sources/postgres-cdc) — ingest from existing databases
-- [MCP for AI agents](/mcp) — let agents query and write data
+<CardGroup cols={2}>
+  <Card title="Configuration" icon="gear" href="/config">
+    Streams, views, sources, JWT auth — all the config options.
+  </Card>
+  <Card title="React hooks" icon="react" href="/sdk/react">
+    `useWavelet` in depth — keyBy, params, error handling.
+  </Card>
+  <Card title="Connect your Postgres" icon="database" href="/sources/postgres-cdc">
+    Subscribe to changes from your existing database via CDC.
+  </Card>
+  <Card title="MCP for AI agents" icon="robot" href="/mcp">
+    Let agents query your data and write events.
+  </Card>
+</CardGroup>
