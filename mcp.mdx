@@ -83,7 +83,7 @@ List all materialized views with their column schemas.
 ```
 Agent: "What views are available?"
 → list_views()
-→ { "views": [{ "name": "leaderboard", "columns": [{ "name": "player_id", "type": "varchar" }, ...] }] }
+→ { "leaderboard": { "columns": [{ "name": "player_id", "type": "varchar" }, ...] } }
 ```
 
 ### `query_view`
@@ -109,7 +109,7 @@ List all event streams with their column schemas.
 ```
 Agent: "What streams can I write to?"
 → list_streams()
-→ { "streams": [{ "name": "game_events", "columns": [{ "name": "player_id", "type": "varchar" }, ...] }] }
+→ { "game_events": { "columns": [{ "name": "player_id", "type": "varchar" }, ...] } }
 ```
 
 ### `emit_event`
@@ -124,7 +124,7 @@ Write a single event to a stream.
 ```
 Agent: "Record a win for Alice with score 100"
 → emit_event({ stream: "game_events", data: { player_id: "alice", action: "win", score: 100 } })
-→ { "ok": true, "stream": "game_events" }
+→ { "ok": true, "stream": "game_events", "columns": ["player_id", "action", "score"] }
 ```
 
 ### `emit_batch`

@@ -89,7 +89,7 @@ curl "http://localhost:8080/v1/views/orders?status=pending&region=us-east"
 
 | Status | Body | When |
 |--------|------|------|
-| `404` | `{ "error": "View 'foo' not found", "available": ["leaderboard"], "hint": "..." }` | View does not exist |
+| `404` | `{ "error": "View 'foo' not found.", "available_views": ["leaderboard"] }` | View does not exist |
 | `401` | `{ "error": "Authentication required..." }` | JWT configured but no valid token |
 
 ### Write a single event
@@ -114,7 +114,7 @@ curl -X POST http://localhost:8080/v1/streams/game_events \
 
 | Status | Body | When |
 |--------|------|------|
-| `404` | `{ "error": "Stream 'foo' not found", "available": ["game_events"], "hint": "..." }` | Stream does not exist |
+| `404` | `{ "error": "Stream 'foo' not found.", "available_streams": ["game_events"] }` | Stream does not exist |
 | `400` | `{ "error": "..." }` | Invalid data or insert failure |
 
 ### Write a batch of events
