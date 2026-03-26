@@ -9,7 +9,7 @@ You'll build a real-time leaderboard: write game scores in, subscribe to ranked 
 ## Prerequisites
 
 - **Node.js** >= 20
-- **Docker** (Wavelet starts a database automatically — Docker is the easiest way)
+- **Docker** (Wavelet starts a database automatically. Docker is the easiest way)
 
 ## Create a project
 
@@ -25,7 +25,7 @@ npx wavelet init
 
 ## Define your data
 
-Edit `wavelet.config.ts` — this is where you declare what data goes in and what queries you want to subscribe to:
+Edit `wavelet.config.ts`. This is where you declare what data goes in and what queries you want to subscribe to:
 
 ```typescript wavelet.config.ts
 import { defineConfig, sql } from '@risingwave/wavelet'
@@ -111,7 +111,7 @@ ws.onmessage = (event) => {
 }
 ```
 
-Send another score in a separate terminal — watch it appear in your WebSocket client instantly:
+Send another score in a separate terminal and watch it appear in your WebSocket client instantly:
 
 ```bash
 curl -X POST http://localhost:8080/v1/streams/game_events \
@@ -121,7 +121,7 @@ curl -X POST http://localhost:8080/v1/streams/game_events \
 
 ## Use it in React
 
-The SDK gives you a single hook that handles everything — initial fetch, WebSocket subscription, and state management:
+The SDK gives you a single hook that handles everything: initial fetch, WebSocket subscription, and state management:
 
 ```tsx
 import { initWavelet, useWavelet } from '@risingwave/wavelet-sdk/react'
@@ -157,7 +157,7 @@ Want full type safety? One command generates typed interfaces from your config:
 npx wavelet generate
 ```
 
-Now your views and streams are fully typed — autocomplete, compile-time checks, the works.
+Now your views and streams are fully typed: autocomplete, compile-time checks, the works.
 
 ## Deploy
 
@@ -173,10 +173,10 @@ It only applies what changed. Safe to run multiple times.
 
 <CardGroup cols={2}>
   <Card title="Configuration" icon="gear" href="/config">
-    Streams, views, sources, JWT auth — all the config options.
+    All config options for streams, views, sources, and JWT auth.
   </Card>
   <Card title="React hooks" icon="react" href="/sdk/react">
-    `useWavelet` in depth — keyBy, params, error handling.
+    `useWavelet` in depth: keyBy, params, error handling.
   </Card>
   <Card title="Connect your Postgres" icon="database" href="/sources/postgres-cdc">
     Subscribe to changes from your existing database via CDC.

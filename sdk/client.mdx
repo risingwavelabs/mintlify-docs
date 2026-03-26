@@ -1,7 +1,7 @@
 ---
 title: "Wavelet TypeScript SDK"
 sidebarTitle: TypeScript client
-description: "WaveletClient API reference — connect to Wavelet, subscribe to real-time view diffs, query views, and emit events from TypeScript."
+description: "WaveletClient API reference: connect to Wavelet, subscribe to real-time view diffs, query views, and emit events from TypeScript."
 ---
 
 The Wavelet TypeScript SDK provides a client for interacting with a Wavelet server. It handles HTTP requests, WebSocket subscriptions, JWT authentication, and automatic reconnection.
@@ -30,8 +30,8 @@ const client = new WaveletClient({
 
 The `token` can be:
 
-- A **static string** — used as-is for all requests
-- A **function** — called before each request, useful for refreshing tokens
+- A **static string**: used as-is for all requests
+- A **function**: called before each request, useful for refreshing tokens
 
 ```typescript
 // Static token
@@ -75,9 +75,9 @@ const rows = await client.view('leaderboard').get({ player_id: 'alice' })
 Returns `Promise<T[]>` where `T` defaults to `Record<string, unknown>`.
 
 **Errors:**
-- `VIEW_NOT_FOUND` — the view does not exist
-- `AUTH_ERROR` — invalid or missing token (when JWT is configured)
-- `SERVER_ERROR` — other server errors
+- `VIEW_NOT_FOUND`: the view does not exist
+- `AUTH_ERROR`: invalid or missing token (when JWT is configured)
+- `SERVER_ERROR`: other server errors
 
 ### `view.subscribe(handlers)`
 
@@ -169,17 +169,17 @@ import type { LeaderboardRow, GameEventsEvent } from './.wavelet/client'
 
 const client = new WaveletClient({ url: 'http://localhost:8080' })
 
-// Typed view — rows are LeaderboardRow[]
+// Typed view. rows are LeaderboardRow[]
 const rows = await client.view<LeaderboardRow>('leaderboard').get()
 
-// Typed stream — emit is type-checked
+// Typed stream. emit is type-checked
 await client.stream<GameEventsEvent>('game_events').emit({
   player_id: 'alice',
   action: 'win',
   score: 100,
 })
 
-// Typed subscription — diff.inserted is LeaderboardRow[]
+// Typed subscription. diff.inserted is LeaderboardRow[]
 client.view<LeaderboardRow>('leaderboard').subscribe({
   onData: (diff) => {
     diff.inserted.forEach((row) => {
@@ -196,7 +196,7 @@ import { TypedWaveletClient } from './.wavelet/client'
 
 const client = new TypedWaveletClient({ url: 'http://localhost:8080' })
 
-// Autocomplete works — views.leaderboard, streams.game_events
+// Autocomplete works. views.leaderboard, streams.game_events
 const rows = await client.views.leaderboard.get()
 await client.streams.game_events.emit({ player_id: 'alice', action: 'win', score: 100 })
 ```

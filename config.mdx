@@ -1,7 +1,7 @@
 ---
 title: "Wavelet configuration reference"
 sidebarTitle: Configuration
-description: "Complete reference for wavelet.config.ts — streams, views, sources, JWT, server options, column types, and the sql template tag."
+description: "Complete reference for wavelet.config.ts. streams, views, sources, JWT, server options, column types, and the sql template tag."
 ---
 
 All Wavelet behavior is driven by a single config file: `wavelet.config.ts`. This file is the source of truth for your streams, views, sources, and server settings. The CLI reads it, syncs it to RisingWave, and generates typed clients from it.
@@ -152,9 +152,9 @@ sources: {
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `type` | `'postgres'` | Yes | — | Source type |
-| `connection` | `string` | Yes | — | PostgreSQL connection string |
-| `tables` | `string[]` | Yes | — | Tables to capture |
+| `type` | `'postgres'` | Yes |. | Source type |
+| `connection` | `string` | Yes |. | PostgreSQL connection string |
+| `tables` | `string[]` | Yes |. | Tables to capture |
 | `slotName` | `string` | No | `wavelet_{sourceName}` | Replication slot name |
 | `publicationName` | `string` | No | `wavelet_{sourceName}_pub` | Publication name |
 
@@ -237,7 +237,7 @@ const view = {
 ```
 
 <Warning>
-The `sql` tag does **not** parameterize values — it concatenates them as strings. This is safe because config files are authored by developers, not user input. Do not pass untrusted input into `sql` template literals.
+The `sql` tag does **not** parameterize values; it concatenates them as strings. This is safe because config files are authored by developers, not user input. Do not pass untrusted input into `sql` template literals.
 </Warning>
 
 ## Full example

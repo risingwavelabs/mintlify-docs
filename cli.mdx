@@ -1,7 +1,7 @@
 ---
 title: "Wavelet CLI reference"
 sidebarTitle: CLI
-description: "Reference for all Wavelet CLI commands — init, dev, push, generate, and status. Manage your Wavelet project from the terminal."
+description: "Reference for all Wavelet CLI commands: init, dev, push, generate, and status. Manage your Wavelet project from the terminal."
 ---
 
 The Wavelet CLI manages your project lifecycle: initialize configs, run a dev server, sync DDL to RisingWave, and generate typed clients.
@@ -33,9 +33,9 @@ npx wavelet dev [--config path]
 What it does, in order:
 
 1. **Loads config** from `wavelet.config.ts` (or the path given by `--config`)
-2. **Starts RisingWave** if not already running — tries native binary first, then Docker
-3. **Syncs DDL** — creates/updates/deletes tables, materialized views, and subscriptions to match your config
-4. **Starts server** — HTTP API + WebSocket on the configured port (default `8080`)
+2. **Starts RisingWave** if not already running, tries native binary first, then Docker
+3. **Syncs DDL**: creates/updates/deletes tables, materialized views, and subscriptions to match your config
+4. **Starts server**: HTTP API + WebSocket on the configured port (default `8080`)
 
 ```
 $ npx wavelet dev
@@ -46,7 +46,7 @@ $ npx wavelet dev
 Wavelet server listening on http://localhost:8080
 ```
 
-The server runs until you press `Ctrl+C`. Shutdown is graceful — it closes WebSocket connections, cursors, and database connections in order.
+The server runs until you press `Ctrl+C`. Shutdown is graceful: it closes WebSocket connections, cursors, and database connections in order.
 
 <Tip>
 If you don't have RisingWave installed, `wavelet dev` will try to start it via Docker automatically. Make sure Docker is running.
@@ -84,7 +84,7 @@ npx wavelet push --json
 ]
 ```
 
-DDL sync is **idempotent** — running `push` multiple times with the same config produces no changes.
+DDL sync is **idempotent**: running `push` multiple times with the same config produces no changes.
 
 ### `wavelet generate`
 
@@ -106,9 +106,9 @@ The generated client includes:
 
 Type resolution uses a three-tier fallback:
 
-1. **Config-declared `columns`** — always available, no RisingWave needed
-2. **RisingWave introspection** — queries `information_schema.columns` if the database is reachable (3-second timeout)
-3. **Generic fallback** — `Record<string, unknown>` if neither is available
+1. **Config-declared `columns`**: always available, no RisingWave needed
+2. **RisingWave introspection**: queries `information_schema.columns` if the database is reachable (3-second timeout)
+3. **Generic fallback**: `Record<string, unknown>` if neither is available
 
 <Tip>
 Add `columns` to your view definitions for reliable offline codegen without needing a running RisingWave.

@@ -1,10 +1,10 @@
 ---
 title: "JWT multi-tenant filtering"
 sidebarTitle: JWT auth
-description: "Wavelet JWT authentication and per-tenant row filtering — configure HS256 or JWKS, use filterBy columns to isolate data per user in real-time subscriptions."
+description: "Wavelet JWT authentication and per-tenant row filtering: configure HS256 or JWKS, use filterBy columns to isolate data per user in real-time subscriptions."
 ---
 
-Wavelet uses JWT tokens to filter real-time view diffs per client. A single materialized view can serve multiple tenants — each client only sees rows that match their token claims.
+Wavelet uses JWT tokens to filter real-time view diffs per client. A single materialized view can serve multiple tenants, and each client only sees rows that match their token claims.
 
 ## How it works
 
@@ -68,8 +68,8 @@ export default defineConfig({
 |-------|------|-------------|
 | `secret` | `string` | HS256 symmetric key |
 | `jwksUrl` | `string` | JWKS endpoint for RS256/ES256 (fetches public keys automatically) |
-| `issuer` | `string` | Expected `iss` claim — rejects tokens from other issuers |
-| `audience` | `string` | Expected `aud` claim — rejects tokens for other apps |
+| `issuer` | `string` | Expected `iss` claim; rejects tokens from other issuers |
+| `audience` | `string` | Expected `aud` claim; rejects tokens for other apps |
 
 ## Client usage
 

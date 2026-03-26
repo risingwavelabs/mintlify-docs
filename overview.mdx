@@ -1,10 +1,10 @@
 ---
-title: "Wavelet — The reactive backend for apps and agents"
+title: "Wavelet: The reactive backend for apps and agents"
 sidebarTitle: Overview
-description: "Build apps and AI agents with live, queryable data. Write data in, subscribe to results — Wavelet keeps everything in sync automatically."
+description: "Build apps and AI agents with live, queryable data. Write data in, subscribe to results. Wavelet keeps everything in sync automatically."
 ---
 
-Wavelet is a reactive backend. You write data in, define queries, and every subscriber — whether it's a React component or an AI agent — gets live results that update automatically.
+Wavelet is a reactive backend. You write data in, define queries, and every subscriber (whether it's a React component or an AI agent) gets live results that update automatically.
 
 No polling. No manual cache invalidation. No WebSocket plumbing.
 
@@ -18,7 +18,7 @@ await client.stream('purchases').emit({
 ```
 
 ```typescript Subscribe to results
-// React — one hook, always up to date
+// React: one hook, always up to date
 const { data } = useWavelet('revenue_by_user', {
   keyBy: 'user_id',
 })
@@ -47,7 +47,7 @@ views: {
     Agents query live data and write events via MCP. Build agents that observe, react, and act on your data.
   </Card>
   <Card title="Multi-tenant SaaS" icon="users">
-    JWT-based filtering built in. Each user sees only their data — enforced server-side, zero extra code.
+    JWT-based filtering built in. Each user sees only their data, enforced server-side. Zero extra code.
   </Card>
   <Card title="Live collaboration" icon="arrows-rotate">
     Activity feeds, notifications, shared state. Every connected client stays in sync automatically.
@@ -84,7 +84,7 @@ views: {
     ```
   </Step>
   <Step title="Start the server">
-    One command sets up everything — database tables, queries, and a live API server.
+    One command sets up everything: database tables, queries, and a live API server.
 
     ```bash
     npx wavelet dev
@@ -133,13 +133,13 @@ views: {
 |---------------------|-------------|
 | Poll your database every N seconds | Subscribers get pushed updates instantly |
 | Build a WebSocket server, manage connections, handle reconnection | Built in. One line: `useWavelet('my_view')` |
-| Write cache invalidation logic | No cache to invalidate — queries are always live |
-| Build separate APIs for your app and your agents | Same data, same queries — apps and agents use the same backend |
+| Write cache invalidation logic | No cache to invalidate, queries are always live |
+| Build separate APIs for your app and your agents | Same data, same queries, same backend for apps and agents |
 | Write per-tenant data filtering logic | `filterBy: 'tenant_id'` + JWT. Done. |
 
 ## Connect your existing database
 
-Already have a Postgres database? Wavelet can subscribe to changes from it via CDC — no need to migrate your data.
+Already have a Postgres database? Wavelet can subscribe to changes from it via CDC. No need to migrate your data.
 
 ```typescript
 sources: {

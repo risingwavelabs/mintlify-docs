@@ -1,7 +1,7 @@
 ---
 title: "Wavelet MCP server for AI agents"
 sidebarTitle: MCP (AI agents)
-description: "Expose Wavelet views and streams to AI agents via Model Context Protocol. Agents can query real-time data, emit events, and run SQL — no HTTP client needed."
+description: "Expose Wavelet views and streams to AI agents via Model Context Protocol. Agents can query real-time data, emit events, and run SQL, no HTTP client needed."
 ---
 
 Wavelet includes an MCP (Model Context Protocol) server that lets AI agents interact with your views and streams using natural language tool calls. Agents can query computed results, write events, and run read-only SQL.
@@ -193,8 +193,8 @@ An agent explores the data schema and runs ad-hoc queries:
 
 ```
 Agent: "What data is available?"
-→ list_views() — sees leaderboard, model_stats
-→ list_streams() — sees game_events, llm_events
+→ list_views() -- sees leaderboard, model_stats
+→ list_streams() -- sees game_events, llm_events
 → run_sql({ sql: "SELECT COUNT(*) FROM game_events" })
 → "There are 1,247 game events across 2 views and 2 streams"
 ```

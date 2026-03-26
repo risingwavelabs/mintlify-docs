@@ -96,7 +96,7 @@ If no `columns` are declared but RisingWave is reachable, codegen queries `infor
 
 ### Tier 3: Generic fallback
 
-If neither is available, the view gets `Record<string, unknown>` — functional but untyped.
+If neither is available, the view gets `Record<string, unknown>`, functional but untyped.
 
 <Tip>
 Add `columns` to your view definitions for reliable offline codegen. This is especially useful in CI/CD where RisingWave may not be running.
@@ -144,7 +144,7 @@ import { TypedWaveletClient } from './.wavelet/client'
 
 const client = new TypedWaveletClient({ url: 'http://localhost:8080' })
 
-// Fully typed — autocomplete works
+// Fully typed, autocomplete works
 const rows = await client.views.leaderboard.get()
 rows[0].player_id  // string
 rows[0].total_score // number

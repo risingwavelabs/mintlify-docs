@@ -4,15 +4,15 @@ sidebarTitle: Postgres CDC
 description: "Ingest data from existing PostgreSQL databases into Wavelet via Change Data Capture. Real-time replication from Postgres tables into RisingWave materialized views."
 ---
 
-Wavelet can ingest data from existing PostgreSQL databases via CDC (Change Data Capture). Changes in your Postgres tables — inserts, updates, deletes — automatically flow into RisingWave, where they can be referenced in view queries.
+Wavelet can ingest data from existing PostgreSQL databases via CDC (Change Data Capture). Changes in your Postgres tables (inserts, updates, deletes) automatically flow into RisingWave, where they can be referenced in view queries.
 
 ## Prerequisites
 
 Your source PostgreSQL database must have:
 
-- **`wal_level = logical`** — required for logical replication
-- **A user with replication privileges** — `ALTER ROLE myuser REPLICATION;`
-- **Primary keys on all captured tables** — RisingWave requires this for CDC
+- **`wal_level = logical`**: required for logical replication
+- **A user with replication privileges**. `ALTER ROLE myuser REPLICATION;`
+- **Primary keys on all captured tables**. RisingWave requires this for CDC
 
 <Tip>
 Most managed Postgres services (AWS RDS, Supabase, Neon) support logical replication but may require enabling it in settings. Check your provider's docs.
@@ -54,9 +54,9 @@ export default defineConfig({
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `type` | `'postgres'` | Yes | — | Source type (only Postgres supported currently) |
-| `connection` | `string` | Yes | — | PostgreSQL connection URL |
-| `tables` | `string[]` | Yes | — | Tables to capture via CDC |
+| `type` | `'postgres'` | Yes |. | Source type (only Postgres supported currently) |
+| `connection` | `string` | Yes |. | PostgreSQL connection URL |
+| `tables` | `string[]` | Yes |. | Tables to capture via CDC |
 | `slotName` | `string` | No | `wavelet_{sourceName}` | Logical replication slot name |
 | `publicationName` | `string` | No | `wavelet_{sourceName}_pub` | Publication name |
 
