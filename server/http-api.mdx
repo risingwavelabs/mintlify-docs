@@ -1,10 +1,10 @@
 ---
 title: "Wavelet HTTP API reference"
 sidebarTitle: HTTP API
-description: "Wavelet HTTP API: health check, list views and streams, query view data, write single and batch events. Full endpoint reference with examples."
+description: "Wavelet HTTP API: health check, list queries and events, query data, write single and batch events. Full endpoint reference with examples."
 ---
 
-Wavelet exposes a REST API for reading views, writing events, and checking server health. All responses are JSON. CORS is enabled by default (all origins).
+Wavelet exposes a REST API for reading queries, writing events, and checking server health. All responses are JSON. CORS is enabled by default (all origins).
 
 Base URL: `http://localhost:8080` (configurable via `server.port` and `server.host` in your config).
 
@@ -20,44 +20,45 @@ GET /v1/health
 { "status": "ok" }
 ```
 
-### List views
+### List queries
 
 ```
-GET /v1/views
+GET /v1/queries
 ```
 
-Returns all available view names.
+Returns all available query names.
 
 ```json
-{ "views": ["leaderboard", "model_stats"] }
+{ "queries": ["leaderboard", "model_stats"] }
 ```
 
-### List streams
+### List events
 
 ```
-GET /v1/streams
+GET /v1/events
 ```
 
-Returns all available stream names.
+Returns all available event names.
 
 ```json
-{ "streams": ["game_events", "llm_events"] }
+{ "events": ["game_events", "llm_events"] }
 ```
 
-### Query a view
+### Query data
 
 ```
-GET /v1/views/{name}
+GET /v1/queries/{name}
 ```
 
 Returns the current rows of a materialized view.
 
 ```bash
-curl http://localhost:8080/v1/views/leaderboard
+curl http://localhost:8080/v1/queries/leaderboard
 ```
 
 ```json
 {
+  "query": "leaderboard",
   "rows": [
     { "player_id": "alice", "total_score": 350 },
     { "player_id": "bob", "total_score": 200 }
@@ -68,11 +69,12 @@ curl http://localhost:8080/v1/views/leaderboard
 **Query parameter filtering:** Add query parameters to filter rows by column values.
 
 ```bash
-curl "http://localhost:8080/v1/views/leaderboard?player_id=alice"
+curl "http://localhost:8080/v1/queries/leaderboard?player_id=alice"
 ```
 
 ```json
 {
+  "query": "leaderboard",
   "rows": [
     { "player_id": "alice", "total_score": 350 }
   ]
@@ -82,26 +84,26 @@ curl "http://localhost:8080/v1/views/leaderboard?player_id=alice"
 Multiple parameters are combined with `AND`:
 
 ```bash
-curl "http://localhost:8080/v1/views/orders?status=pending&region=us-east"
+curl "http://localhost:8080/v1/queries/orders?status=pending&region=us-east"
 ```
 
 **Error responses:**
 
 | Status | Body | When |
 |--------|------|------|
-| `404` | `{ "error": "View 'foo' not found.", "available_views": ["leaderboard"] }` | View does not exist |
+| `404` | `{ "error": "Query 'foo' not found.", "available_queries": ["leaderboard"] }` | Query does not exist |
 | `401` | `{ "error": "Authentication required..." }` | JWT configured but no valid token |
 
 ### Write a single event
 
 ```
-POST /v1/streams/{name}
+POST /v1/events/{name}
 ```
 
-Insert one row into a stream.
+Insert one row into an event table.
 
 ```bash
-curl -X POST http://localhost:8080/v1/streams/game_events \
+curl -X POST http://localhost:8080/v1/events/game_events \
   -H "Content-Type: application/json" \
   -d '{"player_id": "alice", "action": "win", "score": 100}'
 ```
@@ -114,19 +116,19 @@ curl -X POST http://localhost:8080/v1/streams/game_events \
 
 | Status | Body | When |
 |--------|------|------|
-| `404` | `{ "error": "Stream 'foo' not found.", "available_streams": ["game_events"] }` | Stream does not exist |
+| `404` | `{ "error": "Event 'foo' not found.", "available_events": ["game_events"] }` | Event does not exist |
 | `400` | `{ "error": "..." }` | Invalid data or insert failure |
 
 ### Write a batch of events
 
 ```
-POST /v1/streams/{name}/batch
+POST /v1/events/{name}/batch
 ```
 
 Insert multiple rows in one request. Body must be a JSON array.
 
 ```bash
-curl -X POST http://localhost:8080/v1/streams/game_events/batch \
+curl -X POST http://localhost:8080/v1/events/game_events/batch \
   -H "Content-Type: application/json" \
   -d '[
     {"player_id": "alice", "action": "win", "score": 100},
@@ -143,11 +145,11 @@ curl -X POST http://localhost:8080/v1/streams/game_events/batch \
 When JWT is configured, pass the token via the `Authorization` header:
 
 ```bash
-curl http://localhost:8080/v1/views/leaderboard \
+curl http://localhost:8080/v1/queries/leaderboard \
   -H "Authorization: Bearer eyJhbG..."
 ```
 
-JWT is required for WebSocket subscriptions when configured, but the HTTP API currently accepts requests without a token for view reads and stream writes. JWT filtering only applies to WebSocket diffs.
+JWT is required for WebSocket subscriptions when configured, but the HTTP API currently accepts requests without a token for query reads and event writes. JWT filtering only applies to WebSocket diffs.
 
 ## CORS
 

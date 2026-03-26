@@ -4,18 +4,18 @@ sidebarTitle: JWT auth
 description: "Wavelet JWT authentication and per-tenant row filtering: configure HS256 or JWKS, use filterBy columns to isolate data per user in real-time subscriptions."
 ---
 
-Wavelet uses JWT tokens to filter real-time view diffs per client. A single materialized view can serve multiple tenants, and each client only sees rows that match their token claims.
+Wavelet uses JWT tokens to filter real-time query diffs per client. A single materialized view can serve multiple tenants, and each client only sees rows that match their token claims.
 
 ## How it works
 
-1. You define a view with a `filterBy` column
+1. You define a query with a `filterBy` column
 2. You configure JWT verification (secret or JWKS)
 3. Clients connect with a JWT token
 4. Wavelet extracts the claim matching the `filterBy` column name and filters every diff row
 
 ```
 JWT claim: { "tenant_id": "acme" }
-View filterBy: "tenant_id"
+Query filterBy: "tenant_id"
 
 → Client only receives rows where tenant_id = "acme"
 ```
@@ -32,7 +32,7 @@ export default defineConfig({
     secret: process.env.JWT_SECRET,
   },
 
-  views: {
+  queries: {
     tenant_usage: {
       query: sql`SELECT tenant_id, SUM(cost) AS total FROM events GROUP BY tenant_id`,
       filterBy: 'tenant_id',
@@ -53,7 +53,7 @@ export default defineConfig({
     audience: 'your-app-id',
   },
 
-  views: {
+  queries: {
     my_orders: {
       query: sql`SELECT * FROM orders`,
       filterBy: 'customer_id',
@@ -88,7 +88,7 @@ const client = new WaveletClient({
 })
 
 // Subscription is automatically filtered by JWT claims
-client.view('tenant_usage').subscribe({
+client.query('tenant_usage').subscribe({
   onData: (diff) => {
     // Only receives rows where tenant_id matches the token's tenant_id claim
     console.log(diff.inserted, diff.updated, diff.deleted)
@@ -126,11 +126,11 @@ const ws = new WebSocket(
 
 ## Filtering behavior
 
-- **One cursor, many clients.** Wavelet creates a single RisingWave subscription cursor per view. All clients share it. Filtering happens in-memory on the server after fetching from the cursor.
+- **One cursor, many clients.** Wavelet creates a single RisingWave subscription cursor per query. All clients share it. Filtering happens in-memory on the server after fetching from the cursor.
 
 - **Exact string match.** The filter compares `String(row[filterBy])` against `String(claims[filterBy])`. Both sides are converted to strings.
 
-- **No filter = all rows.** If a view does not have `filterBy`, all subscribers receive all diffs regardless of JWT claims.
+- **No filter = all rows.** If a query does not have `filterBy`, all subscribers receive all diffs regardless of JWT claims.
 
 - **Empty diffs suppressed.** If filtering removes all rows from a diff for a particular client, no message is sent to that client.
 
@@ -142,4 +142,4 @@ const ws = new WebSocket(
 
 - **No JWT = no filtering.** If `jwt` is not configured in your config, WebSocket connections work without tokens and no filtering is applied. The `filterBy` field is ignored.
 
-- **HTTP API.** JWT filtering currently applies only to WebSocket subscriptions. HTTP GET requests to views return unfiltered results (or you can filter manually via query parameters).
+- **HTTP API.** JWT filtering currently applies only to WebSocket subscriptions. HTTP GET requests to queries return unfiltered results (or you can filter manually via query parameters).

@@ -1,10 +1,10 @@
 ---
 title: "Wavelet configuration reference"
 sidebarTitle: Configuration
-description: "Complete reference for wavelet.config.ts. streams, views, sources, JWT, server options, column types, and the sql template tag."
+description: "Complete reference for wavelet.config.ts. events, queries, sources, JWT, server options, column types, and the sql template tag."
 ---
 
-All Wavelet behavior is driven by a single config file: `wavelet.config.ts`. This file is the source of truth for your streams, views, sources, and server settings. The CLI reads it, syncs it to RisingWave, and generates typed clients from it.
+All Wavelet behavior is driven by a single config file: `wavelet.config.ts`. This file is the source of truth for your events, queries, sources, and server settings. The CLI reads it, syncs it to RisingWave, and generates typed clients from it.
 
 ## Basic structure
 
@@ -14,9 +14,9 @@ import { defineConfig, sql } from '@risingwave/wavelet'
 export default defineConfig({
   database: 'postgresql://root@localhost:4566/dev',
 
-  streams: { /* input tables */ },
+  events:  { /* input tables */ },
   sources: { /* CDC sources */ },
-  views:   { /* materialized SQL queries */ },
+  queries: { /* materialized SQL queries */ },
   jwt:     { /* authentication */ },
   server:  { /* host and port */ },
 })
@@ -32,12 +32,12 @@ database: 'postgresql://root@localhost:4566/dev'
 
 This is a standard PostgreSQL connection URL. Wavelet uses `pg` to connect.
 
-## `streams`
+## `events`
 
-Streams define input tables. You write events to streams via HTTP POST, and reference them in view queries.
+Events define input tables. You write events to event tables via HTTP POST, and reference them in query definitions.
 
 ```typescript
-streams: {
+events: {
   page_views: {
     columns: {
       user_id: 'string',
@@ -50,7 +50,7 @@ streams: {
 }
 ```
 
-Each stream becomes a RisingWave table. Column names map directly to SQL column names.
+Each event becomes a RisingWave table. Column names map directly to SQL column names.
 
 ### Column types
 
@@ -63,14 +63,14 @@ Each stream becomes a RisingWave table. Column names map directly to SQL column 
 | `'timestamp'` | `TIMESTAMPTZ` | `string` |
 | `'json'` | `JSONB` | `unknown` |
 
-## `views`
+## `queries`
 
-Views define materialized SQL queries. Wavelet creates RisingWave materialized views and subscriptions from these, then pushes diffs to WebSocket subscribers.
+Queries define materialized SQL queries. Wavelet creates RisingWave materialized views and subscriptions from these, then pushes diffs to WebSocket subscribers.
 
 ### Full form
 
 ```typescript
-views: {
+queries: {
   active_users: {
     query: sql`
       SELECT user_id, COUNT(*) AS view_count
@@ -98,7 +98,7 @@ views: {
 If you only need a query (no `filterBy` or `columns`), pass the `sql` fragment directly:
 
 ```typescript
-views: {
+queries: {
   total_views: sql`SELECT COUNT(*) AS total FROM page_views`,
 }
 ```
@@ -108,7 +108,7 @@ views: {
 When set, Wavelet matches the JWT token's claims against this column to filter diffs per-client. See [JWT auth](/server/jwt-auth) for details.
 
 ```typescript
-views: {
+queries: {
   my_orders: {
     query: sql`SELECT * FROM orders`,
     filterBy: 'customer_id',
@@ -123,7 +123,7 @@ views: {
 Optional type hints used by `wavelet generate` for offline codegen. Without these, codegen falls back to RisingWave introspection (requires a running instance) or `Record<string, unknown>`.
 
 ```typescript
-views: {
+queries: {
   leaderboard: {
     query: sql`SELECT player_id, SUM(score) AS total FROM events GROUP BY player_id`,
     columns: {
@@ -158,10 +158,10 @@ sources: {
 | `slotName` | `string` | No | `wavelet_{sourceName}` | Replication slot name |
 | `publicationName` | `string` | No | `wavelet_{sourceName}_pub` | Publication name |
 
-CDC tables are created in RisingWave as `{sourceName}_{tableName}`. For example, `main_db` source with table `users` becomes `main_db_users` in RisingWave, which you can reference in view queries:
+CDC tables are created in RisingWave as `{sourceName}_{tableName}`. For example, `main_db` source with table `users` becomes `main_db_users` in RisingWave, which you can reference in query definitions:
 
 ```typescript
-views: {
+queries: {
   user_order_summary: {
     query: sql`
       SELECT u.id, u.name, COUNT(o.id) AS order_count
@@ -177,7 +177,7 @@ See [Postgres CDC sources](/sources/postgres-cdc) for prerequisites and setup.
 
 ## `jwt`
 
-JWT configuration for multi-tenant filtering. When configured, WebSocket clients must provide a valid token, and view diffs are filtered based on token claims.
+JWT configuration for multi-tenant filtering. When configured, WebSocket clients must provide a valid token, and query diffs are filtered based on token claims.
 
 ```typescript
 jwt: {
@@ -226,7 +226,7 @@ The `sql` template tag creates `SqlFragment` objects. It supports interpolation:
 import { sql } from '@risingwave/wavelet'
 
 const interval = '1 hour'
-const view = {
+const queryDef = {
   query: sql`
     SELECT user_id, COUNT(*) AS cnt
     FROM events
@@ -248,7 +248,7 @@ import { defineConfig, sql } from '@risingwave/wavelet'
 export default defineConfig({
   database: process.env.RISINGWAVE_URL ?? 'postgresql://root@localhost:4566/dev',
 
-  streams: {
+  events: {
     llm_events: {
       columns: {
         tenant_id: 'string',
@@ -269,7 +269,7 @@ export default defineConfig({
     },
   },
 
-  views: {
+  queries: {
     tenant_usage: {
       query: sql`
         SELECT

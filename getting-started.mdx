@@ -34,7 +34,7 @@ export default defineConfig({
   database: 'postgresql://root@localhost:4566/dev',
 
   // What goes in: game scores
-  streams: {
+  events: {
     game_events: {
       columns: {
         player_id: 'string',
@@ -45,7 +45,7 @@ export default defineConfig({
   },
 
   // What comes out: a live leaderboard
-  views: {
+  queries: {
     leaderboard: {
       query: sql`
         SELECT
@@ -71,11 +71,11 @@ That's it. Wavelet starts the database, creates your tables and queries, and lau
 ## Write some data
 
 ```bash
-curl -X POST http://localhost:8080/v1/streams/game_events \
+curl -X POST http://localhost:8080/v1/events/game_events \
   -H "Content-Type: application/json" \
   -d '{"player_id": "alice", "action": "win", "score": 100}'
 
-curl -X POST http://localhost:8080/v1/streams/game_events \
+curl -X POST http://localhost:8080/v1/events/game_events \
   -H "Content-Type: application/json" \
   -d '{"player_id": "bob", "action": "win", "score": 75}'
 ```
@@ -83,11 +83,12 @@ curl -X POST http://localhost:8080/v1/streams/game_events \
 ## Read the results
 
 ```bash
-curl http://localhost:8080/v1/views/leaderboard
+curl http://localhost:8080/v1/queries/leaderboard
 ```
 
 ```json
 {
+  "query": "leaderboard",
   "rows": [
     { "player_id": "alice", "total_score": 100, "games_played": 1 },
     { "player_id": "bob", "total_score": 75, "games_played": 1 }
@@ -114,7 +115,7 @@ ws.onmessage = (event) => {
 Send another score in a separate terminal and watch it appear in your WebSocket client instantly:
 
 ```bash
-curl -X POST http://localhost:8080/v1/streams/game_events \
+curl -X POST http://localhost:8080/v1/events/game_events \
   -H "Content-Type: application/json" \
   -d '{"player_id": "alice", "action": "win", "score": 200}'
 ```
@@ -157,7 +158,7 @@ Want full type safety? One command generates typed interfaces from your config:
 npx wavelet generate
 ```
 
-Now your views and streams are fully typed: autocomplete, compile-time checks, the works.
+Now your queries and events are fully typed: autocomplete, compile-time checks, the works.
 
 ## Deploy
 
@@ -173,7 +174,7 @@ It only applies what changed. Safe to run multiple times.
 
 <CardGroup cols={2}>
   <Card title="Configuration" icon="gear" href="/config">
-    All config options for streams, views, sources, and JWT auth.
+    All config options for events, queries, sources, and JWT auth.
   </Card>
   <Card title="React hooks" icon="react" href="/sdk/react">
     `useWavelet` in depth: keyBy, params, error handling.

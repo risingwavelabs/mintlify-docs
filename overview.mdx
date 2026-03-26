@@ -10,7 +10,7 @@ No polling. No manual cache invalidation. No WebSocket plumbing.
 
 <CodeGroup>
 ```typescript Write data
-await client.stream('purchases').emit({
+await client.event('purchases').emit({
   user_id: 'alice',
   item: 'Pro Plan',
   amount: 29.99,
@@ -25,7 +25,7 @@ const { data } = useWavelet('revenue_by_user', {
 ```
 
 ```typescript Define queries
-views: {
+queries: {
   revenue_by_user: {
     query: sql`
       SELECT user_id, SUM(amount) AS total
@@ -58,7 +58,7 @@ views: {
 
 <Steps>
   <Step title="Define your data and queries">
-    Write a `wavelet.config.ts` that declares your input streams and the SQL queries you want to subscribe to.
+    Write a `wavelet.config.ts` that declares your input events and the SQL queries you want to subscribe to.
 
     ```typescript wavelet.config.ts
     import { defineConfig, sql } from '@risingwave/wavelet'
@@ -66,13 +66,13 @@ views: {
     export default defineConfig({
       database: 'postgresql://root@localhost:4566/dev',
 
-      streams: {
+      events: {
         purchases: {
           columns: { user_id: 'string', item: 'string', amount: 'float' },
         },
       },
 
-      views: {
+      queries: {
         revenue_by_user: {
           query: sql`
             SELECT user_id, SUM(amount) AS total, COUNT(*) AS orders
@@ -121,7 +121,7 @@ views: {
 
     ```
     Agent: "Which users spent more than $100?"
-    → query_view({ view: "revenue_by_user", filter: {} })
+    → query({ query: "revenue_by_user", filter: {} })
     → Finds 3 users, sends them a thank-you email
     ```
   </Step>
@@ -132,7 +132,7 @@ views: {
 | Traditional approach | With Wavelet |
 |---------------------|-------------|
 | Poll your database every N seconds | Subscribers get pushed updates instantly |
-| Build a WebSocket server, manage connections, handle reconnection | Built in. One line: `useWavelet('my_view')` |
+| Build a WebSocket server, manage connections, handle reconnection | Built in. One line: `useWavelet('my_query')` |
 | Write cache invalidation logic | No cache to invalidate, queries are always live |
 | Build separate APIs for your app and your agents | Same data, same queries, same backend for apps and agents |
 | Write per-tenant data filtering logic | `filterBy: 'tenant_id'` + JWT. Done. |
@@ -151,7 +151,7 @@ sources: {
 }
 ```
 
-Your existing tables become available as live query sources. Combine them with Wavelet streams to build views that span both existing and new data.
+Your existing tables become available as live query sources. Combine them with Wavelet events to build queries that span both existing and new data.
 
 ## Next steps
 
@@ -160,10 +160,10 @@ Your existing tables become available as live query sources. Combine them with W
     Build a real-time leaderboard in 5 minutes.
   </Card>
   <Card title="Configuration" icon="gear" href="/config">
-    All config options for streams, views, sources, and auth.
+    All config options for events, queries, sources, and auth.
   </Card>
   <Card title="TypeScript SDK" icon="code" href="/sdk/client">
-    Client API for views, streams, and subscriptions.
+    Client API for queries, events, and subscriptions.
   </Card>
   <Card title="MCP for AI agents" icon="robot" href="/mcp">
     Let your agents query and write data.

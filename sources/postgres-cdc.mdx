@@ -4,7 +4,7 @@ sidebarTitle: Postgres CDC
 description: "Ingest data from existing PostgreSQL databases into Wavelet via Change Data Capture. Real-time replication from Postgres tables into RisingWave materialized views."
 ---
 
-Wavelet can ingest data from existing PostgreSQL databases via CDC (Change Data Capture). Changes in your Postgres tables (inserts, updates, deletes) automatically flow into RisingWave, where they can be referenced in view queries.
+Wavelet can ingest data from existing PostgreSQL databases via CDC (Change Data Capture). Changes in your Postgres tables (inserts, updates, deletes) automatically flow into RisingWave, where they can be referenced in query definitions.
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ export default defineConfig({
     },
   },
 
-  views: {
+  queries: {
     order_summary: {
       query: sql`
         SELECT
@@ -70,7 +70,7 @@ CDC tables in RisingWave are named `{sourceName}_{tableName}`:
 | `app_db` | `orders` | `app_db_orders` |
 | `main` | `products` | `main_products` |
 
-Use these names when referencing CDC tables in view queries.
+Use these names when referencing CDC tables in query definitions.
 
 ## Generated DDL
 
@@ -128,9 +128,9 @@ sources: {
 Replication slots consume WAL on the source Postgres. If RisingWave is down for an extended period, the slot will retain WAL and may fill up your disk. Monitor your source database's replication lag.
 </Warning>
 
-## Combining CDC sources with streams
+## Combining CDC sources with events
 
-You can combine CDC data from existing databases with Wavelet streams (HTTP writes) in the same view:
+You can combine CDC data from existing databases with Wavelet events (HTTP writes) in the same query:
 
 ```typescript
 export default defineConfig({
@@ -144,7 +144,7 @@ export default defineConfig({
     },
   },
 
-  streams: {
+  events: {
     click_events: {
       columns: {
         user_id: 'int',
@@ -154,7 +154,7 @@ export default defineConfig({
     },
   },
 
-  views: {
+  queries: {
     user_activity: {
       query: sql`
         SELECT

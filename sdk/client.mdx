@@ -1,7 +1,7 @@
 ---
 title: "Wavelet TypeScript SDK"
 sidebarTitle: TypeScript client
-description: "WaveletClient API reference: connect to Wavelet, subscribe to real-time view diffs, query views, and emit events from TypeScript."
+description: "WaveletClient API reference: connect to Wavelet, subscribe to real-time query diffs, query data, and emit events from TypeScript."
 ---
 
 The Wavelet TypeScript SDK provides a client for interacting with a Wavelet server. It handles HTTP requests, WebSocket subscriptions, JWT authentication, and automatic reconnection.
@@ -50,41 +50,41 @@ const client = new WaveletClient({
 })
 ```
 
-## Views
+## Queries
 
-### `client.view(name)`
+### `client.query(name)`
 
-Returns a `ViewHandle` with `get()` and `subscribe()` methods.
+Returns a `QueryHandle` with `get()` and `subscribe()` methods.
 
 ```typescript
-const leaderboard = client.view('leaderboard')
+const leaderboard = client.query('leaderboard')
 ```
 
-### `view.get(params?)`
+### `query.get(params?)`
 
-Fetch the current state of a view via HTTP GET.
+Fetch the current state of a query via HTTP GET.
 
 ```typescript
 // All rows
-const rows = await client.view('leaderboard').get()
+const rows = await client.query('leaderboard').get()
 
 // With query param filters
-const rows = await client.view('leaderboard').get({ player_id: 'alice' })
+const rows = await client.query('leaderboard').get({ player_id: 'alice' })
 ```
 
 Returns `Promise<T[]>` where `T` defaults to `Record<string, unknown>`.
 
 **Errors:**
-- `VIEW_NOT_FOUND`: the view does not exist
+- `QUERY_NOT_FOUND`: the query does not exist
 - `AUTH_ERROR`: invalid or missing token (when JWT is configured)
 - `SERVER_ERROR`: other server errors
 
-### `view.subscribe(handlers)`
+### `query.subscribe(handlers)`
 
 Subscribe to real-time diffs via WebSocket. Returns an `unsubscribe` function.
 
 ```typescript
-const unsub = client.view('leaderboard').subscribe({
+const unsub = client.query('leaderboard').subscribe({
   onData: (diff) => {
     console.log('Inserted:', diff.inserted)
     console.log('Updated:', diff.updated)
@@ -111,7 +111,7 @@ unsub()
 
 **Automatic reconnection:** If the WebSocket disconnects unexpectedly, the client reconnects with exponential backoff (1s, 2s, 4s, ... up to 30s). It passes the last received cursor to resume from where it left off.
 
-**Auth rejection (code 4000):** If the server rejects the connection (invalid token, view not found), the client does **not** reconnect. It calls `onError` instead.
+**Auth rejection (code 4000):** If the server rejects the connection (invalid token, query not found), the client does **not** reconnect. It calls `onError` instead.
 
 ### `Diff<T>`
 
@@ -126,34 +126,34 @@ interface Diff<T> {
 }
 ```
 
-## Streams
+## Events
 
-### `client.stream(name)`
+### `client.event(name)`
 
-Returns a `StreamHandle` with `emit()` and `emitBatch()` methods.
+Returns an `EventHandle` with `emit()` and `emitBatch()` methods.
 
 ```typescript
-const events = client.stream('game_events')
+const events = client.event('game_events')
 ```
 
-### `stream.emit(data)`
+### `event.emit(data)`
 
 Write a single event via HTTP POST.
 
 ```typescript
-await client.stream('game_events').emit({
+await client.event('game_events').emit({
   player_id: 'alice',
   action: 'win',
   score: 100,
 })
 ```
 
-### `stream.emitBatch(data)`
+### `event.emitBatch(data)`
 
 Write multiple events in one request via HTTP POST.
 
 ```typescript
-await client.stream('game_events').emitBatch([
+await client.event('game_events').emitBatch([
   { player_id: 'alice', action: 'win', score: 100 },
   { player_id: 'bob', action: 'loss', score: -50 },
 ])
@@ -169,18 +169,18 @@ import type { LeaderboardRow, GameEventsEvent } from './.wavelet/client'
 
 const client = new WaveletClient({ url: 'http://localhost:8080' })
 
-// Typed view. rows are LeaderboardRow[]
-const rows = await client.view<LeaderboardRow>('leaderboard').get()
+// Typed query. rows are LeaderboardRow[]
+const rows = await client.query<LeaderboardRow>('leaderboard').get()
 
-// Typed stream. emit is type-checked
-await client.stream<GameEventsEvent>('game_events').emit({
+// Typed event. emit is type-checked
+await client.event<GameEventsEvent>('game_events').emit({
   player_id: 'alice',
   action: 'win',
   score: 100,
 })
 
 // Typed subscription. diff.inserted is LeaderboardRow[]
-client.view<LeaderboardRow>('leaderboard').subscribe({
+client.query<LeaderboardRow>('leaderboard').subscribe({
   onData: (diff) => {
     diff.inserted.forEach((row) => {
       console.log(row.player_id, row.total_score) // fully typed
@@ -196,9 +196,9 @@ import { TypedWaveletClient } from './.wavelet/client'
 
 const client = new TypedWaveletClient({ url: 'http://localhost:8080' })
 
-// Autocomplete works. views.leaderboard, streams.game_events
-const rows = await client.views.leaderboard.get()
-await client.streams.game_events.emit({ player_id: 'alice', action: 'win', score: 100 })
+// Autocomplete works. queries.leaderboard, events.game_events
+const rows = await client.queries.leaderboard.get()
+await client.events.game_events.emit({ player_id: 'alice', action: 'win', score: 100 })
 ```
 
 ## Error handling
@@ -209,14 +209,14 @@ All SDK errors are `WaveletError` instances with a `code` property:
 import { WaveletError } from '@risingwave/wavelet-sdk'
 
 try {
-  await client.view('nonexistent').get()
+  await client.query('nonexistent').get()
 } catch (err) {
   if (err instanceof WaveletError) {
     switch (err.code) {
-      case 'AUTH_ERROR':        // 401 or WebSocket 4000
-      case 'VIEW_NOT_FOUND':   // 404
-      case 'CONNECTION_ERROR': // client not initialized
-      case 'SERVER_ERROR':     // other errors
+      case 'AUTH_ERROR':         // 401 or WebSocket 4000
+      case 'QUERY_NOT_FOUND':   // 404
+      case 'CONNECTION_ERROR':  // client not initialized
+      case 'SERVER_ERROR':      // other errors
     }
   }
 }
